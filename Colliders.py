@@ -1,9 +1,12 @@
 import math
-
 import pygame.draw
 
 
 # ____________________________Shape Collision Detection Methods____________________________#
+
+# y = mx+c
+def DotProd(p1,p2):
+    return (p1[0] * p2[0]) + (p1[1] * p2[1])
 
 def DistanceFromPoint(P1, P2):
     """
@@ -11,7 +14,8 @@ def DistanceFromPoint(P1, P2):
     :param P1:
     :return  Returns Distance from P1 to p2 using Pythagoras:
     """
-    return math.sqrt(((P2[0] - P1[0]) ** 2) + ((P2[1] - P1[1]) ** 2))
+    # x2 + y2
+    return math.sqrt(((P2[0] + P1[0]) ** 2) + ((P2[1] + P1[1]) ** 2))
 
 
 def CircleLineCollide(Circle, Line):
@@ -40,28 +44,64 @@ class Circle(Shape):
         self.borderSize = 5
 
     def LineInRadius(self, Line):
-
+        newpos = (0,0)
         # Had to do A LOT OF SHIT to get to the point where this works.
-        x = Line.pos[0] - self.pos[0]
-        y = Line.pos[1] - self.pos[1]
+        # UPDATE: This only works with Vertical lines :/
+        # Formula of projection is:
+        # scalar = Dot(line end, self.pos) / Dot(line end, line end) (or line x**2 + liney**2)
+        # (self.x * scalar, self.y* scalar) = the closest position on the line i think (will test now)
 
-        xpos = self.pos[0] + x
-        ypos = Line.pos[1] - y
+        # make points relative to line center as a 0,0 position
+        #x = (Line.pos[0] - self.pos[0], Line.pos[1] - self.pos[1])
+        #v = (Line.P2[0] - self.pos[0], Line.P2[1] - self.pos[1])
+
+        x = self.pos
+        v = Line.pos
+
+        a = DotProd(v,x)
+        b = DotProd(v,v)
 
 
+        if a ==0 or b == 0:
+            return
 
-        newpos = (xpos,ypos)
-        pygame.draw.line(self.screenRef,(255,255,255),newpos,self.pos)
+        c = b/a
 
+        x = (Line.P2[0] - Line.pos[0]) * c
+        y = (Line.P2[1] - Line.pos[1]) * c
+
+        print(x,y)
+
+        x += Line.pos[0]
+        y += Line.pos[1]
+
+
+        # I can use this to get the right angled triangle that is closest to the line
+        newpos = (x,y)
+
+        print(newpos)
+
+        rightx = x + self.pos[0]
+        righty = y + self.pos[1]
+        newerpos= (rightx,righty)
+        pygame.draw.line(self.screenRef,(0,0,255),self.pos,newerpos)
+
+
+        pygame.draw.line(self.screenRef,(255,255,255),Line.P2,self.pos)
+        pygame.draw.line(self.screenRef,(255,255,255),Line.pos,self.pos)
+
+        #Mid section:
+        midx = Line.pos[0] + ((Line.P2[0] - Line.pos[0]) * 0.5)
+        midy = Line.pos[1] + ((Line.P2[1] - Line.pos[1]) * 0.5)
+        pygame.draw.line(self.screenRef,(100,100,100),self.pos,(midx,midy))
+
+        pygame.draw.line(self.screenRef,(100,200,0),newpos,self.pos,5)
+        pygame.draw.circle(self.screenRef,(0,255,255),newpos,5)
         # External point check, because the rest of this formula is wierd
-        if self.ContainsPoint(Line.pos) or self.ContainsPoint(Line.P2):
-            return True
 
 
         # If line is on the point and within the radius of the Circle then true
-        if Line.PointOnLine(newpos):
-            if self.ContainsPoint(newpos):
-                return True
+
 
         return False
 
@@ -129,6 +169,7 @@ class Line(Shape):
 
     def DrawLine(self):
         pygame.draw.line(self.screenRef, self.color, self.pos, self.P2, 5)
+        pygame.draw.circle(self.screenRef,(255,0,0),self.P2,5)
 
     def PointOnLine(self, P):
         """

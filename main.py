@@ -49,16 +49,23 @@ if __name__ == '__main__':
     gaming = True
 
     c1 = Colliders.Circle(300, 300, 50, SCREEN)
-    c2 = Colliders.Circle(30, 700, 30, SCREEN)
+    #c2 = Colliders.Circle(30, 700, 30, SCREEN)
 
     AABB1 = Colliders.AABB(30, 30, SCREEN, 100, 100)
     #AABB2 = Colliders.AABB(400, 400, SCREEN, 100, 100)
 
-    Line = Colliders.Line(400, 400, SCREEN, 100, 180)
+    Line = Colliders.Line(400, 400, SCREEN, 100, 45)
 
     player = Colliders.Shape(0, 0, SCREEN)
 
     c1.LineInRadius(Line)
+
+    print(f'''
+    Line start: {Line.pos}
+    Line end: {Line.P2}
+    Circle Pos: {c1.pos}
+    
+    ''')
 
     while gaming:
         for event in pygame.event.get():
@@ -89,7 +96,7 @@ if __name__ == '__main__':
             Line.color = GBACOLORS[1]
 
         c1.Draw()
-        #pygame.draw.line(SCREEN, Line.color, AABB1.pos, player.pos, 4)
+        pygame.draw.line(SCREEN, Line.color, c1.pos, player.pos, 4)
 
         Line.DrawLine()
 
