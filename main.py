@@ -60,13 +60,6 @@ if __name__ == '__main__':
 
     c1.LineInRadius(Line)
 
-    print(f'''
-    Line start: {Line.pos}
-    Line end: {Line.P2}
-    Circle Pos: {c1.pos}
-    
-    ''')
-
     while gaming:
         for event in pygame.event.get():
             if event.type == pygame.QUIT or pygame.key.get_pressed()[pygame.K_ESCAPE]:
@@ -79,9 +72,8 @@ if __name__ == '__main__':
 
         # Move Circle
         AABB1.Draw()
-        #AABB2.Draw()
 
-        MoveObj(c1, 5)
+        MoveObj(AABB1, 5)
 
         if pygame.key.get_pressed()[pygame.K_a]:
             Line.dir += 1
@@ -90,13 +82,15 @@ if __name__ == '__main__':
             Line.dir -= 1
             Line.P2 = Line.GetP2()
 
-        if c1.LineInRadius(Line):
+        if AABB1.PointCollide(Line.P2):
             Line.color = GBACOLORS[3]
         else:
             Line.color = GBACOLORS[1]
 
+
+
         c1.Draw()
-        pygame.draw.line(SCREEN, Line.color, c1.pos, player.pos, 4)
+        #pygame.draw.line(SCREEN, Line.color, c1.pos, player.pos, 4)
 
         Line.DrawLine()
 

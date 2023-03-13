@@ -1,10 +1,9 @@
 import math
 import pygame.draw
-
+# By Billiams Mcbingus 13/03/2023
 
 # ____________________________Shape Collision Detection Methods____________________________#
 
-# y = mx+c
 def DotProd(p1,p2):
     return (p1[0] * p2[0]) + (p1[1] * p2[1])
 
@@ -31,6 +30,7 @@ class Shape:
         self.pos = [x, y]
         self.screenRef = scr
         self.color = (48, 98, 48)
+        self.debug = False  # Some shapes have debug settings to visually see what's going on
 
     def DrawPoint(self):
         pygame.draw.circle(self.screenRef, self.color, self.pos, 5)
@@ -46,35 +46,14 @@ class Circle(Shape):
     def LineInRadius(self, Line):
         if self.ContainsPoint(Line.pos) or self.ContainsPoint(Line.P2):
             return True
-        # This new version works perfectly >:(
-        # All of this code is basically my own version, but this is straight up from the book.
-        # I wanted to know the why so bad, but my high school level mathematics abilities just
-        # Arent up to the task for this apparently hmmmmmmmmmmmm
 
-        # Glad I dont have to spend any more time on this tho :)
-        A = Line.pos
-        B = Line.P2
-        P = self.pos
+        u = (((self.pos[0] - Line.pos[0]) * (Line.P2[0] - Line.pos[0])) + ((self.pos[1] - Line.pos[1]) * (Line.P2[1] - Line.pos[1]))) / (Line.size**2)
 
-        x1 = A[0]
-        x2 = B[0]
-        kx = P[0]
-
-        y1 = A[1]
-        y2 = B[1]
-        ky = P[1]
-
-        # u is the line slope / scalar that projects the circle position onto the line
-
-        u = (((kx - x1) * (x2 - x1)) + ((ky - y1) * (y2 - y1))) / (Line.size**2)
-
-        newx = x1 + (u * (x2 - x1))     # (p2-p1 * u) is basiscally just the point on the line multiplied by the slope scalar.
-        newy = y1 + (u * (y2 - y1))
-
-        newPos = (newx,newy)
-        pygame.draw.line(self.screenRef,(255,255,255),self.pos,newPos,5)
-        pygame.draw.circle(self.screenRef,(255,0,0),newPos,5)
-
+        newPos = (Line.pos[0] + (u * (Line.P2[0] - Line.pos[0])),Line.pos[1] + (u * (Line.P2[1] - Line.pos[1])))
+        # Debug
+        if self.debug:
+            pygame.draw.line(self.screenRef,(255,255,255),self.pos,newPos,5)
+            pygame.draw.circle(self.screenRef,(255,0,0),newPos,5)
 
         if Line.PointOnLine(newPos): # We use this new position to test if it lies on the line (since its an infinite line)
             if self.ContainsPoint(newPos):  # If on the line, we just need to see if its within the radius of the Circle
@@ -166,27 +145,25 @@ class AABB(Shape):
         pygame.draw.rect(self.screenRef, self.color, (self.pos[0], self.pos[1], self.w, self.h), 5)
 
     def DetectAABB(self, BBY):
-        # This is more truncated for demo purposes
-
-        # self top left Less than BBY bottom right
-        if self.pos[0] < BBY.pos[0] + BBY.w and self.pos[1] < BBY.pos[1] + BBY.h:
-            # self bottom right greater than BBYY top left
-            if self.pos[0] + self.w > BBY.pos[0] and self.pos[1] + self.h > BBY.pos[0]:
-                return True
-
+        # self top left Less than BBY bottom right and
+        # self bottom right greater than BBYY top left
+        if self.pos[0] < BBY.pos[0] + BBY.w and self.pos[1] < BBY.pos[1] + BBY.h and self.pos[0] + self.w > BBY.pos[0] and self.pos[1] + self.h > BBY.pos[0]:
+            return True
         return False
 
+    def PointCollide(self,Pos):
+        # Just checks that point is within bounds of the aabb points (top left x/y and bottom right x/y)
+        return self.pos[0] <= Pos[0] <= self.pos[0] + self.w and self.pos[1] <= Pos[1] <= self.pos[1] + self.h
 
 class Line(Shape):
 
     def __init__(self, x, y, scr, Size, Dir):
         super().__init__(x, y, scr)
-        self.dir = Dir  # So its always within 360 degrees)
+        self.dir = Dir
         self.size = Size
         self.P2 = self.GetP2()
 
     def GetP2(self):
-        # Had a good few hours doing this one:
         # THIS IS COOL (found on quora lol) - SOHCAHTOA
         # angle is given in constructor, so if we assume a vector of 1 (normalized), then we can just use sin and cos to get
         # the x and y axis, then scale them by the given size. that is the 2nd point of this line
@@ -210,9 +187,9 @@ class Line(Shape):
         # Then it is on the line (triangle facts)
 
 
-        length = math.ceil(DistanceFromPoint(self.pos, self.P2))
-        p1Dist = math.ceil(DistanceFromPoint(self.pos, P))
-        p2Dist = math.ceil(DistanceFromPoint(self.P2, P))
+        length = DistanceFromPoint(self.pos, self.P2)
+        p1Dist = DistanceFromPoint(self.pos, P)
+        p2Dist = DistanceFromPoint(self.P2, P)
 
         # Gives some leeway to be less precise
         minLen = length - 2
