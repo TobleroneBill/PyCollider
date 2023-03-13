@@ -1,11 +1,23 @@
 import math
 import pygame.draw
+
+GBACOLORS = (
+    (15, 56, 15),  # Darkest
+    (48, 98, 48),
+    (139, 172, 15),
+    (155, 188, 15)  # Lightest
+)
+
+
 # By Billiams Mcbingus 13/03/2023
 
 # ____________________________Shape Collision Detection Methods____________________________#
 
-def DotProd(p1,p2):
+def DotProd(p1, p2):
     return (p1[0] * p2[0]) + (p1[1] * p2[1])
+
+def DetemrinantP3(p1,p2,p3):
+    return (((p1[0] - p3[0]) * (p2[1] - p3[1])) - ((p2[0] - p3[0]) * (p1[1] - p3[1])))
 
 def DistanceFromPoint(P1, P2):
     """
@@ -47,15 +59,17 @@ class Circle(Shape):
         if self.ContainsPoint(Line.pos) or self.ContainsPoint(Line.P2):
             return True
 
-        u = (((self.pos[0] - Line.pos[0]) * (Line.P2[0] - Line.pos[0])) + ((self.pos[1] - Line.pos[1]) * (Line.P2[1] - Line.pos[1]))) / (Line.size**2)
+        u = (((self.pos[0] - Line.pos[0]) * (Line.P2[0] - Line.pos[0])) + (
+                    (self.pos[1] - Line.pos[1]) * (Line.P2[1] - Line.pos[1]))) / (Line.size ** 2)
 
-        newPos = (Line.pos[0] + (u * (Line.P2[0] - Line.pos[0])),Line.pos[1] + (u * (Line.P2[1] - Line.pos[1])))
+        newPos = (Line.pos[0] + (u * (Line.P2[0] - Line.pos[0])), Line.pos[1] + (u * (Line.P2[1] - Line.pos[1])))
         # Debug
         if self.debug:
-            pygame.draw.line(self.screenRef,(255,255,255),self.pos,newPos,5)
-            pygame.draw.circle(self.screenRef,(255,0,0),newPos,5)
+            pygame.draw.line(self.screenRef, (255, 255, 255), self.pos, newPos, 5)
+            pygame.draw.circle(self.screenRef, (255, 0, 0), newPos, 5)
 
-        if Line.PointOnLine(newPos): # We use this new position to test if it lies on the line (since its an infinite line)
+        if Line.PointOnLine(
+                newPos):  # We use this new position to test if it lies on the line (since its an infinite line)
             if self.ContainsPoint(newPos):  # If on the line, we just need to see if its within the radius of the Circle
                 return True
         return False
@@ -151,9 +165,10 @@ class AABB(Shape):
             return True
         return False
 
-    def PointCollide(self,Pos):
+    def PointCollide(self, Pos):
         # Just checks that point is within bounds of the aabb points (top left x/y and bottom right x/y)
         return self.pos[0] <= Pos[0] <= self.pos[0] + self.w and self.pos[1] <= Pos[1] <= self.pos[1] + self.h
+
 
 class Line(Shape):
 
@@ -175,7 +190,7 @@ class Line(Shape):
 
     def DrawLine(self):
         pygame.draw.line(self.screenRef, self.color, self.pos, self.P2, 5)
-        pygame.draw.circle(self.screenRef,(255,0,0),self.P2,5)
+        pygame.draw.circle(self.screenRef, (255, 0, 0), self.P2, 5)
 
     def PointOnLine(self, P):
         """
@@ -186,7 +201,6 @@ class Line(Shape):
         # Theorm: if the magnitude to the point from both sides of the line added together is == to the line magnitude
         # Then it is on the line (triangle facts)
 
-
         length = DistanceFromPoint(self.pos, self.P2)
         p1Dist = DistanceFromPoint(self.pos, P)
         p2Dist = DistanceFromPoint(self.P2, P)
@@ -195,8 +209,49 @@ class Line(Shape):
         minLen = length - 2
         maxLen = length + 2
 
-
         if maxLen >= p1Dist + p2Dist >= minLen:
             return True
         else:
             return False
+
+
+class Tri(Shape):
+
+    def __init__(self, x, y, scr, p1, p2, p3):
+        super().__init__(x, y, scr)
+        self.points = [p1, p2, p3]  # arr of triangle points
+        self.drawWidth = 5
+        self.area = self.GetTriArea()
+        print(self.area)
+
+    def GetTriArea(self):
+        # not to be used with point collide as this is too slow and should just be used for comaprisons
+
+        return None
+
+    def Draw(self):
+        for index, point in enumerate(self.points):
+            pygame.draw.circle(self.screenRef, GBACOLORS[2], point, 5)
+            if index == 0:
+                pygame.draw.line(self.screenRef, self.color, self.points[index], self.points[len(self.points) - 1],
+                                 self.drawWidth)
+                continue
+            pygame.draw.line(self.screenRef, self.color, self.points[index - 1], self.points[index], self.drawWidth)
+
+    def PointCollide(self,pt):
+        # This uses a matrix multiplication/determinant method to get areas
+        # that's why it is so dumb and complicated (but more performant)
+        # we would usually also /2 for each area as the results given are for squares
+        # we don't actually need this, as it works exactly the same, just with bigger numbers
+        # which is faster than division (I believe)
+
+        # Makes life easier for me
+        p1 = self.points[0]
+        p2 = self.points[1]
+        p3 = self.points[2]
+
+        area = abs(DetemrinantP3(p1,p2,p3))
+        a1 = abs(DetemrinantP3(p1,p2,pt))
+        a2 = abs(DetemrinantP3(p2,p3,pt))
+        a3 = abs(DetemrinantP3(p3,p1,pt))
+        return a1+a2+a3 == area

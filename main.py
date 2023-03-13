@@ -54,11 +54,17 @@ if __name__ == '__main__':
     AABB1 = Colliders.AABB(30, 30, SCREEN, 100, 100)
     #AABB2 = Colliders.AABB(400, 400, SCREEN, 100, 100)
 
-    Line = Colliders.Line(400, 400, SCREEN, 100, 45)
+    Tri1 = Colliders.Tri(400,400,SCREEN,(100,100),(300,100),(200,400))
+
+    Line = Colliders.Line(0, 0, SCREEN, 160, 41)
+
+    point = Colliders.Shape(200,200,SCREEN)
 
     player = Colliders.Shape(0, 0, SCREEN)
 
     c1.LineInRadius(Line)
+
+    Tri1.PointCollide(Line.P2)
 
     while gaming:
         for event in pygame.event.get():
@@ -70,10 +76,13 @@ if __name__ == '__main__':
 
         player.DrawPoint()
 
+        Tri1.Draw()
+
         # Move Circle
         AABB1.Draw()
 
         MoveObj(AABB1, 5)
+
 
         if pygame.key.get_pressed()[pygame.K_a]:
             Line.dir += 1
@@ -82,10 +91,10 @@ if __name__ == '__main__':
             Line.dir -= 1
             Line.P2 = Line.GetP2()
 
-        if AABB1.PointCollide(Line.P2):
-            Line.color = GBACOLORS[3]
+        if Tri1.PointCollide(player.pos):
+            Tri1.color = (255,255,255)
         else:
-            Line.color = GBACOLORS[1]
+            Tri1.color = GBACOLORS[1]
 
 
 
