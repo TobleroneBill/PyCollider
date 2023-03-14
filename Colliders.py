@@ -1,6 +1,9 @@
 import math
 import pygame.draw
 
+# By Billiams Mcbingus 13/03/2023
+# ____________________________Shape Collision Detection Methods____________________________#
+
 GBACOLORS = (
     (15, 56, 15),  # Darkest
     (48, 98, 48),
@@ -8,16 +11,13 @@ GBACOLORS = (
     (155, 188, 15)  # Lightest
 )
 
-
-# By Billiams Mcbingus 13/03/2023
-
-# ____________________________Shape Collision Detection Methods____________________________#
+# _____________________________/Module Functions/_____________________________#
 
 def DotProd(p1, p2):
     return (p1[0] * p2[0]) + (p1[1] * p2[1])
 
-def DetemrinantP3(p1,p2,p3):
-    return (((p1[0] - p3[0]) * (p2[1] - p3[1])) - ((p2[0] - p3[0]) * (p1[1] - p3[1])))
+def DetemrinantP3(p1, p2, p3):
+    return ((p1[0] - p3[0]) * (p2[1] - p3[1])) - ((p2[0] - p3[0]) * (p1[1] - p3[1]))
 
 def DistanceFromPoint(P1, P2):
     """
@@ -28,25 +28,51 @@ def DistanceFromPoint(P1, P2):
     #                       a2              +           B2
     return math.sqrt(((P1[0] - P2[0]) ** 2) + ((P1[1] - P2[1]) ** 2))
 
-
 def CircleLineCollide(Circle, Line):
-    aCollide = Circle.ContainsPoint(Line.pos)
-    bCollide = Circle.ContainsPoint(Line.P2)
+    aCollide = Circle.PointCollide(Line.pos)
+    bCollide = Circle.PointCollide(Line.P2)
     if aCollide or bCollide:
         return True
     return False
 
+def IsOOB(Pos,Width,Height):
+    return 0 < Pos[0] < Width and 0 < Pos[1] < Height
+
+def Move(Shape, Distance):
+    if pygame.key.get_pressed()[pygame.K_UP]:
+        if IsOOB((Shape.pos[0], Shape.pos[1] - Distance)):
+            Shape.pos[1] -= Distance
+    if pygame.key.get_pressed()[pygame.K_DOWN]:
+        if IsOOB((Shape.pos[0], Shape.pos[1] + Distance)):
+            Shape.pos[1] += Distance
+    if pygame.key.get_pressed()[pygame.K_LEFT]:
+        if IsOOB((Shape.pos[0] - Distance, Shape.pos[1])):
+            Shape.pos[0] -= Distance
+    if pygame.key.get_pressed()[pygame.K_RIGHT]:
+        if IsOOB((Shape.pos[0] + Distance, Shape.pos[1])):
+            Shape.pos[0] += Distance
 
 class Shape:
     def __init__(self, x, y, scr):
         self.pos = [x, y]
         self.screenRef = scr
         self.color = (48, 98, 48)
+        self.CollideColor = GBACOLORS[3]
+        self.safeColor = GBACOLORS[1]
         self.debug = False  # Some shapes have debug settings to visually see what's going on
 
-    def DrawPoint(self):
+    def Draw(self):
         pygame.draw.circle(self.screenRef, self.color, self.pos, 5)
 
+    def OriginPointCollide(self,pos,delta):
+        minx = self.pos[0] - delta
+        miny = self.pos[1] - delta
+        maxx = self.pos[0] + delta
+        maxy = self.pos[1] + delta
+
+        if (pos[0] > minx and pos[0] < maxx) and (pos[1] > miny and pos[1] < maxy):
+            return True
+        return False
 
 class Circle(Shape):
 
@@ -56,11 +82,11 @@ class Circle(Shape):
         self.borderSize = 5
 
     def LineInRadius(self, Line):
-        if self.ContainsPoint(Line.pos) or self.ContainsPoint(Line.P2):
+        if self.PointCollide(Line.pos) or self.PointCollide(Line.P2):
             return True
 
         u = (((self.pos[0] - Line.pos[0]) * (Line.P2[0] - Line.pos[0])) + (
-                    (self.pos[1] - Line.pos[1]) * (Line.P2[1] - Line.pos[1]))) / (Line.size ** 2)
+                (self.pos[1] - Line.pos[1]) * (Line.P2[1] - Line.pos[1]))) / (Line.size ** 2)
 
         newPos = (Line.pos[0] + (u * (Line.P2[0] - Line.pos[0])), Line.pos[1] + (u * (Line.P2[1] - Line.pos[1])))
         # Debug
@@ -70,68 +96,14 @@ class Circle(Shape):
 
         if Line.PointOnLine(
                 newPos):  # We use this new position to test if it lies on the line (since its an infinite line)
-            if self.ContainsPoint(newPos):  # If on the line, we just need to see if its within the radius of the Circle
+            if self.PointCollide(newPos):  # If on the line, we just need to see if its within the radius of the Circle
                 return True
         return False
-
-    '''
-    # WE DONT GO TO RAVENHOLM #
-    def LineInRadius(self, Line):
-        newpos = (0,0)
-
-        # This works, but doesn't take into account rotations :thinking:
-
-        # Had to do A LOT OF SHIT to get to the point where this works.
-        # UPDATE: This only works with Vertical lines :/
-        # Formula of projection is:
-        # scalar = Dot(line end, self.pos) / Dot(line end, line end) (or line x**2 + liney**2)
-        # (self.x * scalar, self.y* scalar) = the closest position on the line i think (will test now)
-
-        # This assumes origin 0,0, which is not the case
-
-        x = (self.pos[0] + Line.pos[0],self.pos[1]+Line.pos[1])
-        v = (Line.P2[0] + Line.pos[0],Line.P2[1]+Line.pos[1])
-
-        #x = self.pos
-        #v = Line.P2
-
-
-        a = DotProd(v,x)
-        b = DotProd(v,v)
-
-        if a == 0 or b == 0:
-            return
-
-        c = a/b
-        x = Line.P2[0] * c
-        y = Line.P2[1] * c
-
-        # I can use this to get the right angled triangle that is closest to the line
-        newpos = (x,y)
-
-        pygame.draw.line(self.screenRef,(255,255,255),Line.P2,self.pos)
-        pygame.draw.line(self.screenRef,(255,255,255),Line.pos,self.pos)
-
-        #Mid section:
-        midx = Line.pos[0] + ((Line.P2[0] - Line.pos[0]) * 0.5)
-        midy = Line.pos[1] + ((Line.P2[1] - Line.pos[1]) * 0.5)
-        pygame.draw.line(self.screenRef,(100,100,100),self.pos,(midx,midy))
-
-        #pygame.draw.line(self.screenRef,(100,200,0),newpos,self.pos,5)
-        pygame.draw.circle(self.screenRef,(0,255,255),newpos,5)
-
-
-        # If line is on the point and within the radius of the Circle then true
-        if self.ContainsPoint(newpos):
-            return True
-
-        return False
-    '''
 
     def Draw(self):
         pygame.draw.circle(self.screenRef, self.color, self.pos, self.r, self.borderSize)
 
-    def ContainsPoint(self, Point):
+    def PointCollide(self, Point):
         """
         Checks if Point is within Circle Radius
         :param Point: (x,y) Vector
@@ -146,6 +118,35 @@ class Circle(Shape):
         :return:
         """
         return DistanceFromPoint(self.pos, CircleObj.pos) <= self.r + CircleObj.r
+
+    def RectCollide(self, RectObj):
+        px = self.pos[0]
+        py = self.pos[1]
+
+        # which x side to check
+        if self.pos[0] < RectObj.pos[0]:  # left
+            px = RectObj.pos[0]
+        elif self.pos[0] > RectObj.pos[0] + RectObj.w:  # Right
+            px = RectObj.pos[0] + RectObj.w
+
+        # Y side
+        if self.pos[1] < RectObj.pos[1]:  # above
+            py = RectObj.pos[1]
+        elif self.pos[1] > RectObj.pos[1] + RectObj.h:  # below
+            py = RectObj.pos[1] + RectObj.h
+
+        # Book has some wierd ass subtraction that doesn't work :/
+        distanceX = px
+        distanceY = py
+
+        Dist = DistanceFromPoint(self.pos, (distanceX, distanceY))
+
+        if self.debug:
+            pygame.draw.line(self.screenRef, GBACOLORS[2], self.pos, (distanceX, distanceY))
+
+        if Dist <= self.r:
+            return True
+        return False
 
 
 class AABB(Shape):
@@ -169,6 +170,26 @@ class AABB(Shape):
         # Just checks that point is within bounds of the aabb points (top left x/y and bottom right x/y)
         return self.pos[0] <= Pos[0] <= self.pos[0] + self.w and self.pos[1] <= Pos[1] <= self.pos[1] + self.h
 
+    def LineCollide(self, Line):
+        # this uses the same ideas as the circle line collide method, just with more points
+        # so its more complicated. would recommend this for something that requires a single check
+        # Like line of sight, as continuous calling of this is likely very bad performance wise
+        if self.PointCollide(Line.pos) or self.PointCollide(Line.P2):
+            return True
+
+        # Just applies the line intersection check on every line of the aabb.
+        # this is why its slow, but accurate
+        left = Line.LineIntersect(self.pos, (self.pos[0], self.pos[1] + self.h))
+        right = Line.LineIntersect((self.pos[0] + self.w, self.pos[1]), (self.pos[0] + self.w, self.pos[1] + self.h))
+        top = Line.LineIntersect(self.pos, (self.pos[0] + self.w, self.pos[1]))
+        bot = Line.LineIntersect((self.pos[0], self.pos[1] + self.h), (self.pos[0] + self.w, self.pos[1] + self.h))
+
+        # if any intersect, its colliding
+        if left or right or top or bot:
+            return True
+
+        return False
+
 
 class Line(Shape):
 
@@ -188,14 +209,14 @@ class Line(Shape):
         y *= self.size
         return [self.pos[0] + x, self.pos[1] + y]
 
-    def DrawLine(self):
+    def Draw(self):
         pygame.draw.line(self.screenRef, self.color, self.pos, self.P2, 5)
         pygame.draw.circle(self.screenRef, (255, 0, 0), self.P2, 5)
 
-    def PointOnLine(self, P):
+    def PointCollide(self, P):
         """
 
-        :param P:
+        :param P:w
         :return A bool to check if point is on this line object:
         """
         # Theorm: if the magnitude to the point from both sides of the line added together is == to the line magnitude
@@ -214,20 +235,51 @@ class Line(Shape):
         else:
             return False
 
+    def LineIntersect(self, LineP1, LineP2):
+        # get all positions (easier on my brain)
+        a = self.pos
+        b = self.P2
+        c = LineP1
+        d = LineP2
+
+        # we have to get the scalars of each line segment in relation to the points we are checking against
+        # This uses the same method as the Circle line check, but just with 2 lines instead of 1
+
+        denominator = (((d[1] - c[1]) * (b[0] - a[0])) - ((d[0] - c[0]) * (b[1] - a[1])))
+        if denominator == 0:
+            return False
+
+        # I think this is basically ortho projection, but without actually getting the projection coords
+        # the scalars will both be between 0 and 1 if the lines intersect, because the projection will
+        # be on both line segments
+
+        # scalar for line 1
+        uA = (((d[0] - c[0]) * (a[1] - c[1])) - ((d[1] - c[1]) * (a[0] - c[0]))) / denominator
+        # Inverse of above / scalar for line 2
+        uB = (((b[0] - a[0]) * (a[1] - c[1])) - ((b[1] - a[1]) * (a[0] - c[0]))) / denominator
+
+        # This looks super sick
+        if self.debug:
+            # actual projection coords
+            line1Projection = (a[0] + (uA * (b[0] - a[0])), a[1] + (uA * (b[1] - a[1])))
+            line2Projection = (c[0] + (uB * (d[0] - c[0])), c[1] + (uB * (d[1] - c[1])))
+            pygame.draw.line(self.screenRef, (GBACOLORS[2]), a, line1Projection)
+            pygame.draw.line(self.screenRef, (GBACOLORS[2]), c, line2Projection)
+
+        if (0 <= uA <= 1) and (0 <= uB <= 1):
+            return True
+        return False
+
 
 class Tri(Shape):
-
     def __init__(self, x, y, scr, p1, p2, p3):
         super().__init__(x, y, scr)
         self.points = [p1, p2, p3]  # arr of triangle points
         self.drawWidth = 5
         self.area = self.GetTriArea()
-        print(self.area)
 
     def GetTriArea(self):
-        # not to be used with point collide as this is too slow and should just be used for comaprisons
-
-        return None
+        return abs(DetemrinantP3(self.points[0], self.points[1], self.points[2])) / 2
 
     def Draw(self):
         for index, point in enumerate(self.points):
@@ -238,7 +290,8 @@ class Tri(Shape):
                 continue
             pygame.draw.line(self.screenRef, self.color, self.points[index - 1], self.points[index], self.drawWidth)
 
-    def PointCollide(self,pt):
+    def PointCollide(self, pt):
+        # this was super useful: https://www.gamedev.net/forums/topic.asp?topic_id=295943
         # This uses a matrix multiplication/determinant method to get areas
         # that's why it is so dumb and complicated (but more performant)
         # we would usually also /2 for each area as the results given are for squares
@@ -250,8 +303,8 @@ class Tri(Shape):
         p2 = self.points[1]
         p3 = self.points[2]
 
-        area = abs(DetemrinantP3(p1,p2,p3))
-        a1 = abs(DetemrinantP3(p1,p2,pt))
-        a2 = abs(DetemrinantP3(p2,p3,pt))
-        a3 = abs(DetemrinantP3(p3,p1,pt))
-        return a1+a2+a3 == area
+        area = abs(DetemrinantP3(p1, p2, p3))
+        a1 = abs(DetemrinantP3(p1, p2, pt))
+        a2 = abs(DetemrinantP3(p2, p3, pt))
+        a3 = abs(DetemrinantP3(p3, p1, pt))
+        return a1 + a2 + a3 == area
