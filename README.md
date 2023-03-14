@@ -7,3 +7,5 @@ Am using this: https://gitlab.com/Penaz/2dgd_f0th as a basis for my collision de
 This approach is a bit slow, but I believe this will pay off in the future, since I want to be doing games anyway and these mathematic techniques will probably always have use cases in that field.
 
 Have also been learning so much maths for this its pretty crazy and definitely way too advanced but it's pretty fun figuring out stuff like vector projection, what the dot product actually does, revising on my SOHCAHTOA and just using these tools to solve my vector based problems.
+
+Playable showcase on itch using pygbag web assembly: https://billiams.itch.io/collision-module-test
