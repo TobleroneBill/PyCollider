@@ -35,21 +35,21 @@ def CircleLineCollide(Circle, Line):
         return True
     return False
 
-def IsOOB(Pos,Width,Height):
-    return 0 < Pos[0] < Width and 0 < Pos[1] < Height
+def IsOOB(Pos,minPos,maxPos):
+    return minPos[0] < Pos[0] < maxPos[0] and minPos[1] < Pos[1] < maxPos[1]
 
-def Move(Shape, Distance):
+def Move(Shape, Distance,min,max):
     if pygame.key.get_pressed()[pygame.K_UP]:
-        if IsOOB((Shape.pos[0], Shape.pos[1] - Distance)):
+        if IsOOB((Shape.pos[0], Shape.pos[1] - Distance),min,max):
             Shape.pos[1] -= Distance
     if pygame.key.get_pressed()[pygame.K_DOWN]:
-        if IsOOB((Shape.pos[0], Shape.pos[1] + Distance)):
+        if IsOOB((Shape.pos[0], Shape.pos[1] + Distance),min,max):
             Shape.pos[1] += Distance
     if pygame.key.get_pressed()[pygame.K_LEFT]:
-        if IsOOB((Shape.pos[0] - Distance, Shape.pos[1])):
+        if IsOOB((Shape.pos[0] - Distance, Shape.pos[1]),min,max):
             Shape.pos[0] -= Distance
     if pygame.key.get_pressed()[pygame.K_RIGHT]:
-        if IsOOB((Shape.pos[0] + Distance, Shape.pos[1])):
+        if IsOOB((Shape.pos[0] + Distance, Shape.pos[1]),min,max):
             Shape.pos[0] += Distance
 
 class Shape:
@@ -94,7 +94,7 @@ class Circle(Shape):
             pygame.draw.line(self.screenRef, (255, 255, 255), self.pos, newPos, 5)
             pygame.draw.circle(self.screenRef, (255, 0, 0), newPos, 5)
 
-        if Line.PointOnLine(
+        if Line.PointCollide(
                 newPos):  # We use this new position to test if it lies on the line (since its an infinite line)
             if self.PointCollide(newPos):  # If on the line, we just need to see if its within the radius of the Circle
                 return True
@@ -227,8 +227,8 @@ class Line(Shape):
         p2Dist = DistanceFromPoint(self.P2, P)
 
         # Gives some leeway to be less precise
-        minLen = length - 2
-        maxLen = length + 2
+        minLen = length - 0.5
+        maxLen = length + 0.5
 
         if maxLen >= p1Dist + p2Dist >= minLen:
             return True
