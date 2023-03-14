@@ -1,5 +1,5 @@
 # Collider Module
-A module for collision detection and resoultion
+A module for collision detection ~~and resoultion~~
 
 The aim is to make this module for my Suicide King game, and also any other general pygame projects I may work on in the future. Collision detetection sucks, so I want to spend as little time messing with it as possible. Once I get the fundementals, it NEEDS to be gone from my life :/
 
